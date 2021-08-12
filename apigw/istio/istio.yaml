@@ -1,0 +1,116 @@
+# Создать CRD, использующийся Istio operator'ом, чтобы развернуть Istio
+---
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: main
+  namespace: istio-system
+spec:
+  components:
+    base: # Базовые настройки. Роли, сервисы, CRD
+      enabled: true
+
+    istiod_remote: # Настройки, при которых уровень управления установлен вне кластера
+      enabled: false
+
+    ingressGateways: # Общая точка для входа трафика в Service mesh
+      - name: istio-ingressgateway
+        enabled: true
+
+    egressGateways: # Общаая точка для выхода трафика из Service mesh
+      - name: istio-egressgateway
+        enabled: false
+
+    cni: # Istio container network interface плагин, обеспечивает настройку сети POD
+      enabled: true
+      namespace: "kube-system"
+
+    pilot: # Управление конфигурацией proxy
+      enabled: true
+      k8s:
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+  values: # Настройки компонентов
+    meshConfig: # Настройки Service mesh
+
+      enableAutoMtls: false # Отключаем шифрование
+      enableTracing: true # Включаем tracing
+
+      defaultConfig: # Настройки proxy по-умолчанию
+        concurrency: 1 # Количество воркеров
+
+    global:
+      proxy:
+        autoInject: disabled
+        resources:
+          requests:
+            cpu: 50m
+            memory: 30Mi
+          limits:
+            cpu: 50m
+            memory: 128Mi
+        readinessPeriodSeconds: 60
+        holdApplicationUntilProxyStarts: true
+      proxy_init:
+        resources:
+          limits:
+            cpu: 50m
+            memory: 64Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+      tracer:
+        zipkin:
+          address: ""
+
+    istio_cni:
+      enabled: true
+
+    pilot:
+      autoscaleEnabled: false
+      traceSampling: 0.0
+      enableProtocolSniffingForInbound: true
+      enableProtocolSniffingForOutbound: true
+
+    telemetry:
+      enabled: false
+      v2:
+        enabled: false
+        prometheus:
+          enabled: false
+
+    sidecarInjectorWebhook:
+      enableNamespacesByDefault: true
+      objectSelector:
+        enabled: false
+        autoInject: true
+
+    cni:
+      cniBinDir: /opt/cni/bin
+      cniConfDir: /etc/cni/net.d
+      excludeNamespaces:
+        - istio-system
+        - kube-system
+      repair:
+        deletePods: false
+
+    gateways:
+      istio-ingressgateway:
+        name: istio-egressgateway
+        autoscaleEnabled: false
+        type: NodePort
+        ports:
+          - port: 15021
+            name: status-port
+            protocol: TCP
+          - port: 80
+            targetPort: 8080
+            name: http2
+            protocol: TCP

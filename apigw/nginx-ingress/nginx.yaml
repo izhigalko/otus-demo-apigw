@@ -1,0 +1,7 @@
+---
+controller:
+  service:
+    enableHttps: false
+    type: NodePort
+    nodePorts:
+      http: 32080

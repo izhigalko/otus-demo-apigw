@@ -1,0 +1,45 @@
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: "jwt-auth"
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  jwtRules: # Включаем фильтр для анализа JWT токена
+    - issuer: "http://auth-service"
+      jwksUri: "http://auth-service.default.svc.cluster.local/.well-known/jwks.json"
+      forwardOriginalToken: true
+      outputPayloadToHeader: "x-jwt-token"
+      fromHeaders:
+        - name: "x-auth-token"
+
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: "authz"
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths: ["/auth*"] # Разрешаем доступ к /auth всем запросам
+    - to:
+        - operation:
+            paths: ["/admin*"]
+      when:
+        - key: request.auth.claims[groups] # Разрешаем доступ к /admin запросам, с JWT токеном внутри которого есть группа admin
+          values: ["admin"]
+    - from:
+        - source:
+            requestPrincipals: [ "*" ] # Запрещаем доступ к остальным ресурсам для запросов без JWT
+      to:
+        - operation:
+            notPaths: ["/auth*", "/admin*"]

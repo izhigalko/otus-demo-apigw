@@ -1,0 +1,12 @@
+---
+providers:
+  kubernetesIngress:
+    enabled: false # Настраиваем маршруты только с помощью CRD (IngressRoute)
+ports:
+  websecure:
+    expose: false # Выключаем https
+logs:
+  access:
+    enabled: true
+  general:
+    level: DEBUG

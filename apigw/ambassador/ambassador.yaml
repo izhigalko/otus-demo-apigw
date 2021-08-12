@@ -1,0 +1,11 @@
+---
+replicaCount: 1
+enableAES: true # Edge Stack требует лицензии, можно получить бесплатную лицензию по ссылке https://www.getambassador.io/aes-community-license-renewal/
+redis:
+  create: true # Redis нужен для аутентификации и рейт-лимитов
+authService:
+  create: true # Хотя и будем использовать свой auth-service, но дефолтный должен быть включен. Без него не работает JWT авторизация. Он будет работать в связке с нашим.
+rateLimit:
+  create: false # Отключаем рейт-лимиты по умолчанию
+agent:
+  enabled: false # Отключаем интеграцию с ambassador.io

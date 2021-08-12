@@ -1,0 +1,33 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-auth-prefix
+spec:
+  stripPrefix:
+    prefixes:
+      - /auth
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: default-routes
+spec:
+  routes:
+    - kind: Rule
+      match: PathPrefix(`/auth`) # Запросы с префиксом /auth отправляем в auth-service
+      services:
+        - name: auth-service
+          namespace: default
+          port: 80
+      middlewares:
+        - name: strip-auth-prefix # Убираем префикс из пути, чтобы запросы шли на корень сервиса
+          namespace: default
+    - kind: Rule
+      match: PathPrefix(`/`) # Остальные запросы отправляем в echoserver
+      priority: 1 # Traefik сам сортирует роуты по длине и приоритету, так что нм не обязательно сортировать их, как в Istio
+      services:
+        - name: echoserver
+          namespace: default
+          port: 80

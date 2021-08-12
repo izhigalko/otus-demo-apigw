@@ -1,0 +1,41 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor User
+participant "Api gateway"
+participant "Auth service"
+participant "Service"
+
+User -> "Api gateway" : Запрос /uri
+
+"Api gateway" -> "Auth service" : Запрос авторизации
+
+alt #LightBlue session cookie exists
+
+"Auth service" -> "Api gateway" : Авторизован - 200
+"Api gateway" -> "Service" : Запрос /uri с заголовками из авторизации
+"Service" -> "User" : Ответ
+
+else #Pink
+
+"Auth service" -> "User" : Не авторизован - 302 /login
+"User" -> "Auth service" : Запрос /login
+
+alt #LightBlue
+
+  "Auth service" -> "User" : Успешный вход, установка session coookie) - 302 /uri
+  User -> "Api gateway" : Запрос /uri
+  "Api gateway" -> "Auth service" : Запрос авторизации
+  "Auth service" -> "Api gateway" : Авторизован - 200
+  "Api gateway" -> "Service" : Запрос /uri с заголовками из авторизации
+  "Service" -> "User" : Ответ
+
+else #Pink
+
+  "Auth service" -> "User": Логин неверный
+
+end
+
+end
+
+@enduml

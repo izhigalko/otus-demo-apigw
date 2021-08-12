@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor User
+participant "Api gateway"
+participant "Auth service"
+participant "Service"
+
+User -> "Api gateway" : Запрос
+
+"Api gateway" -> "Auth service" : Запрос авторизации
+activate "Api gateway"
+
+alt #LightBlue "Пользователь авторизован"
+
+"Auth service" -> "Api gateway" : Авторизован - 200
+"Api gateway" -> "Service" : Запрос с заголовками из авторизации
+"Service" -> "User" : Ответ
+
+else #Pink "Пользователь не авторизован"
+
+"Auth service" -> "Api gateway" : Не авторизован - 401
+"Api gateway" -> User : Не авторизован - 401
+
+end
+
+deactivate "Api gateway"
+
+@enduml

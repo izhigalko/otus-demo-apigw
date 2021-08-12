@@ -1,0 +1,46 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: ingress
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 8080
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: auth-service
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - ingress
+  http: # Обратите внимание на порядок маршрутов, маршрут / идет последним, иначе все запросы будут идти именно в него
+    - name: "auth-whitelisted" # Указываем имя для применения EnvoyFilter
+      match:
+        - uri:
+            prefix: /auth/ # Все запросы к /auth/ направляем к auth-service
+      rewrite:
+        uri: / # Перезаписываем префикс с /auth/ на /, чтобы запросы шли в корень сервиса
+      route:
+        - destination:
+            port:
+              number: 80
+            host: auth-service.default.svc.cluster.local
+    - match:
+        - uri:
+            prefix: / # Остальные запросы направляем к echoserver
+      route:
+        - destination:
+            port:
+              number: 80
+            host: echoserver.default.svc.cluster.local

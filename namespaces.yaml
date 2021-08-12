@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+  labels:
+    istio-injection: disabled
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traefik
+  labels:
+    istio-injection: disabled
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ambassador
+  labels:
+    istio-injection: disabled
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-ingress
+  labels:
+    istio-injection: disabled

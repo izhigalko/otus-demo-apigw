@@ -1,0 +1,76 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: external-auth
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+      app: istio-ingressgateway
+  configPatches:
+    - applyTo: CLUSTER # Добавляем кластер с адресом сервера аутентификации.
+      match:
+        context: ANY
+        cluster: { }
+      patch:
+        operation: ADD
+        value:
+          name: ext_authz
+          connect_timeout: 5s
+          type: LOGICAL_DNS
+          lb_policy: ROUND_ROBIN
+          http_protocol_options: { }
+          load_assignment:
+            cluster_name: ext_authz
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: auth-service.default.svc.cluster.local
+                          port_value: 80
+
+    - applyTo: HTTP_FILTER # Добавляем фильтр аутентификации на все маршруты в Gateway
+      match:
+        context: GATEWAY
+      patch:
+        operation: INSERT_BEFORE # Аутентификация должна отработать раньше фильтра JWT, чтобы он подхватил токен, переданный из auth-service
+        filterClass: AUTHN
+        value:
+          name: envoy.filters.http.ext_authz
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+            stat_prefix: ext_authz
+            transport_api_version: V3
+            http_service:
+              server_uri:
+                uri: http://auth-service.default.svc.cluster.local
+                cluster: ext_authz
+                timeout: 10s
+              path_prefix: "/auth/istio"
+              authorization_request:
+                allowed_headers:
+                  patterns:
+                    - exact: "cookie"
+              authorization_response:
+                allowed_upstream_headers:
+                  patterns:
+                    - exact: "x-username"
+                    - exact: "x-auth-token"
+
+    - applyTo: HTTP_ROUTE # Отключаем аутентификацию для маршрутов связанных с методом входа и выхода
+      match:
+        context: GATEWAY
+        routeConfiguration:
+          vhost:
+            route:
+              name: "auth-whitelisted"
+      patch:
+        operation: MERGE
+        value:
+          typed_per_filter_config:
+            envoy.filters.http.ext_authz:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+              disabled: true

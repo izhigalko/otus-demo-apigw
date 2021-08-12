@@ -1,0 +1,35 @@
+apiVersion: getambassador.io/v2
+kind: Filter
+metadata:
+  name: jwt-auth
+spec:
+  JWT: # Создаем фильтр для проверки JWT токена
+    jwksURI: "http://auth-service.default.svc.cluster.local/.well-known/jwks.json"
+    issuer: "http://auth-service"
+    injectRequestHeaders:
+      - name: "x-auth-token"
+        value: "{{ .token.Raw }}"
+
+---
+apiVersion: getambassador.io/v2
+kind: FilterPolicy
+metadata:
+  name: auth-check # Подменяем старые правила, потому что есть подозрения, что ambassador их не мержит
+spec:
+  rules: # Применяем jwt фильтр к ресурсам
+    - host: "*"
+      path: "/auth*" # Разрешаем доступ к /auth всем запросам
+      filters: null
+    - host: "*"
+      path: "/admin*" # Разрешаем доступ к /admin запросам, с JWT токеном внутри которого есть группа admin
+      filters:
+        - name: "auth-service"
+        - name: "jwt-auth"
+          arguments:
+            scope:
+              - "admin"
+    - host: "*"
+      path: "*" # Запрещаем доступ к остальным ресурсам для запросов без JWT
+      filters:
+        - name: "auth-service"
+        - name: "jwt-auth"

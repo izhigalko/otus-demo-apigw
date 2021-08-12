@@ -1,0 +1,30 @@
+apiVersion: getambassador.io/v2
+kind: Host
+metadata:
+  name: wildcard
+spec:
+  hostname: "*" # Выключаем использование https
+  acmeProvider:
+    authority: none
+  requestPolicy:
+    insecure:
+      action: Route
+
+---
+apiVersion: getambassador.io/v2
+kind:  Mapping
+metadata:
+  name:  echoserver
+spec:
+  prefix: / # Направляем все запросы к echoserver
+  service: echoserver.default
+
+---
+apiVersion: getambassador.io/v2
+kind:  Mapping
+metadata:
+  name:  auth-service
+spec:
+  prefix: /auth/ # Направляем запросы c префиксом /auth к auth-service
+  service: auth-service.default
+  bypass_auth: true # Отключаем аутентификацию на запросы к auth-service

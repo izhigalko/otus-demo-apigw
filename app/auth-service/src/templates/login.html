@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <style type="text/css">
+        div.box {
+            width: 300px;
+        }
+
+        div.box div.row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        div.box div.column {
+            margin-right: 6px;
+        }
+
+        div.row div.column:first-child {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <form action="" method="POST" enctype="application/x-www-form-urlencoded">
+        <div class="box">
+            <div class="row">
+                <div class="column"><label for="username">Имя пользователя</label></div>
+                <div class="column"><input id="username" name="username" type="text"/></div>
+            </div>
+            <div class="row">
+                <div class="column"><label for="password">Пароль</label></div>
+                <div class="column"><input id="password" name="password" type="password"/></div>
+            </div>
+            <div class="row">
+                <div class="column"><button type="submit" name="state" id="state" value="{{ state_key }}">Вход</button></div>
+            </div>
+        </div>
+    </form>
+</html>
