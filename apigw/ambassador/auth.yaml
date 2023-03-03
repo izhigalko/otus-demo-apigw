@@ -20,7 +20,7 @@ spec:
   rules:
     - host: "*"
       path: "/auth*" # Разрешаем доступ к /auth всем запросам
-      filters: null
+      filters: []
     - host: "*"
       path: "*"
       filters:

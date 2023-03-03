@@ -191,8 +191,10 @@ helm repo update
 Развернуть Ambassador:
 
 ```shell
-helm install --version "6.7.13" -n ambassador --set licenseKey.value=<Ключ, полученный по ссылке> \
--f apigw/ambassador/ambassador.yaml ambassador datawire/ambassador
+kubectl apply -f https://app.getambassador.io/yaml/edge-stack/3.5.1/aes-crds.yaml
+kubectl wait --timeout=90s --for=condition=available deployment emissary-apiext -n emissary-system
+helm install edge-stack --namespace ambassador datawire/edge-stack --set emissary-ingress.createDefaultListeners=true  \
+--set emissary-ingress.agent.cloudConnectToken=<cloudToken>
 ```
 
 Проверить работоспособность:
